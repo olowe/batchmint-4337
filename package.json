@@ -1,7 +1,7 @@
 {
   "name": "batchmint-4337",
   "workspaces": [
-    "contracts",
+    "ops",
     "frontend"
   ],
   "version": "1.0.0",
@@ -11,6 +11,6 @@
   "scripts": {
     "build:contracts": "cd contracts && forge build",
     "test:contracts": "cd contracts && forge test -vvv",
-    "format:contracts": "cd contracts && forge fmt"
+    "test:ops": "cd ops && npm run dev"
   }
 }

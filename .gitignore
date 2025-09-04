@@ -12,6 +12,13 @@ contracts/docs/
 
 # Dotenv file
 /contracts/.env
+/ops/.env
+
+# Node modules
+/ops/node_modules
+
+# Build files
+/ops/dist
 
 # IDE files
 .vscode/

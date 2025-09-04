@@ -1,0 +1,26 @@
+{
+  "name": "ops",
+  "version": "1.0.0",
+  "description": "Scripts for constructing and sending ERC-4337 UserOperations manually (no bundler)",
+  "license": "MIT",
+  "author": "Victor Olowe",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "gts lint",
+    "clean": "gts clean",
+    "compile": "tsc",
+    "fix": "gts fix",
+    "dev": "npm run compile && node dist/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.2",
+    "ethers": "^6.15.0"
+  },
+  "devDependencies": {
+    "gts": "^6.0.2",
+    "typescript": "^5.9.2",
+    "@types/node": "^22.7.5"
+  }
+}
