@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {IERC20} from "../src/openzeppelin-contracts/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {BatchMintToken} from "../src/BatchMintToken.sol";
 import {BatchMintTokenFactory, TokenParam} from "../src/BatchMintTokenFactory.sol";
 
