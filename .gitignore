@@ -11,7 +11,7 @@ contracts/out/
 contracts/docs/
 
 # Dotenv file
-.env
+/contracts/.env
 
 # IDE files
 .vscode/
