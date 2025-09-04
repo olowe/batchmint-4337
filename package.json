@@ -1,0 +1,16 @@
+{
+  "name": "batchmint-4337",
+  "workspaces": [
+    "contracts",
+    "frontend"
+  ],
+  "version": "1.0.0",
+  "description": "Token factory with account abstraction integration (ERC-4337)",
+  "license": "MIT",
+  "author": "Victor Olowe",
+  "scripts": {
+    "build:contracts": "cd contracts && forge build",
+    "test:contracts": "cd contracts && forge test -vvv",
+    "format:contracts": "cd contracts && forge fmt"
+  }
+}
