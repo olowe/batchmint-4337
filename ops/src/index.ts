@@ -1,9 +1,9 @@
 import 'dotenv/config';
 import {ethers} from 'ethers';
+import batchMintTokenFactory from '../abis/BatchMintTokenFactory.json' with {type: 'json'};
 import entryPoint from '../abis/EntryPoint.json' with {type: 'json'};
 import simpleAccount from '../abis/SimpleAccount.json' with {type: 'json'};
 import simpleAccountFactory from '../abis/SimpleAccountFactory.json' with {type: 'json'};
-import batchMintTokenFactory from '../abis/BatchMintTokenFactory.json' with {type: 'json'};
 
 // Anvil RPC
 const RPC_URL = 'http://127.0.0.1:8545';
@@ -92,11 +92,11 @@ async function main() {
 
   // STAGE 2
   // Check smart account status
-  const userSmartAccountExists = await provider.getCode(userSmartAccount);
-  const deploySmartAccount = userSmartAccountExists === '0x';
+  const userSmartAccountContractCode = await provider.getCode(userSmartAccount);
+  const shouldDeploySmartAccount = userSmartAccountContractCode === '0x';
 
   //  Encode factory calldata
-  const factoryCalldata = deploySmartAccount
+  const factoryCalldata = shouldDeploySmartAccount
     ? simpleAccountFactoryContract.interface.encodeFunctionData(
         'createAccount',
         [userEOA, SALT],
@@ -104,7 +104,7 @@ async function main() {
     : '0x';
 
   // Set initCode for first-time Smart Contract Account creation
-  const initCode = deploySmartAccount
+  const initCode = shouldDeploySmartAccount
     ? SIMPLE_ACCOUNT_FACTORY + factoryCalldata.slice(2)
     : '0x';
 
