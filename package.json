@@ -1,9 +1,5 @@
 {
   "name": "batchmint-4337",
-  "workspaces": [
-    "ops",
-    "frontend"
-  ],
   "version": "1.0.0",
   "description": "Token factory with account abstraction integration (ERC-4337)",
   "license": "MIT",
@@ -11,6 +7,7 @@
   "scripts": {
     "build:contracts": "cd contracts && forge build",
     "test:contracts": "cd contracts && forge test -vvv",
-    "test:ops": "cd ops && npm run dev"
+    "test:ops": "cd ops && npm run dev",
+    "start:app": "cd frontend && npm run dev"
   }
 }
