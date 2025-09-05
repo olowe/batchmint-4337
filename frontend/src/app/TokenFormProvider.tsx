@@ -1,9 +1,10 @@
-import { createContext, PropsWithChildren, useContext, useState } from "react";
-import { useAccount, useConfig, usePublicClient } from "wagmi";
-import { useConnectionStatus } from "./ConnectionStatusProvider";
+"use client";
 import batchMintTokenFactoryABI from "@/abis/BatchMintTokenFactory";
 import useSmartAccount from "@/hooks/useSmartAccount";
 import networkContractsConfig from "@/wallet/network-contracts.config";
+import { createContext, PropsWithChildren, useContext, useState } from "react";
+import { useAccount, usePublicClient } from "wagmi";
+import { useConnectionStatus } from "./ConnectionStatusProvider";
 
 interface ITokenCardItem {
   id: number;
@@ -18,7 +19,7 @@ interface IFormData {
   totalSupply: string;
 }
 
-interface TokenFormContext {
+interface ITokenFormContext {
   formData: IFormData;
   tokenPreview: ITokenCardItem[];
   isFormValid: boolean;
@@ -33,7 +34,7 @@ interface TokenFormContext {
   isDuplicateToken: () => boolean;
 }
 
-const Context = createContext<TokenFormContext>({
+const Context = createContext<ITokenFormContext>({
   formData: { name: "", symbol: "", totalSupply: "" },
   tokenPreview: [],
   isFormValid: false,
@@ -48,7 +49,8 @@ const Context = createContext<TokenFormContext>({
   isDuplicateToken: () => false,
 });
 
-export const useTokenFormProvider = () => useContext(Context);
+export const useTokenFormProvider = () =>
+  useContext<ITokenFormContext>(Context);
 
 export default function TokenFormProvider(props: PropsWithChildren) {
   const { isConnected, chainId } = useAccount();

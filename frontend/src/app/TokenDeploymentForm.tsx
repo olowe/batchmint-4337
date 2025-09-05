@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTokenDeployer } from "./TokenDeploymentProvider";
 import { useTokenFormProvider } from "./TokenFormProvider";
 
 export default function TokenDeploymentForm() {
@@ -24,6 +25,8 @@ export default function TokenDeploymentForm() {
     isDeploymentEnabled,
     notification,
   } = useTokenFormProvider();
+
+  const { deployTokens } = useTokenDeployer();
 
   return (
     <Card className="glass">
@@ -111,7 +114,9 @@ export default function TokenDeploymentForm() {
             Clear All
           </Button>
           <Button
-            onClick={() => {}}
+            onClick={async () => {
+              await deployTokens();
+            }}
             disabled={
               tokenPreview.length === 0 || isDeploying || !isDeploymentEnabled
             }

@@ -6,6 +6,7 @@ import ConnectionStatusProvider from "./ConnectionStatusProvider";
 import TokenDeploymentForm from "./TokenDeploymentForm";
 import TokenDeploymentHistory from "./TokenDeploymentHistory";
 import TokenDeploymentPreview from "./TokenDeploymentPreview";
+import TokenDeploymentProvider from "./TokenDeploymentProvider";
 import TokenFormProvider from "./TokenFormProvider";
 import WalletButton from "./WalletButton";
 
@@ -27,18 +28,16 @@ function Home() {
       </header>
 
       <div className="container mx-auto px-4 py-8">
-        <TokenFormProvider>
-          <div className="grid lg:grid-cols-5 gap-8">
-            <div className="lg:col-span-3 space-y-6">
-              <TokenDeploymentForm />
-            </div>
-
-            <div className="lg:col-span-2 space-y-6">
-              <TokenDeploymentPreview />
-              <TokenDeploymentHistory />
-            </div>
+        <div className="grid lg:grid-cols-5 gap-8">
+          <div className="lg:col-span-3 space-y-6">
+            <TokenDeploymentForm />
           </div>
-        </TokenFormProvider>
+
+          <div className="lg:col-span-2 space-y-6">
+            <TokenDeploymentPreview />
+            <TokenDeploymentHistory />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -49,7 +48,11 @@ export default function App() {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <ConnectionStatusProvider>
-          <Home />
+          <TokenFormProvider>
+            <TokenDeploymentProvider>
+              <Home />
+            </TokenDeploymentProvider>
+          </TokenFormProvider>
         </ConnectionStatusProvider>
       </QueryClientProvider>
     </WagmiProvider>
