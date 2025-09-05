@@ -9,7 +9,7 @@ import {BatchMintTokenFactory} from "../src/BatchMintTokenFactory.sol";
 
 contract DeployScript is Script {
     EntryPoint entryPoint;
-    SimpleAccountFactory simpleAccountFactoryFactory;
+    SimpleAccountFactory simpleAccountFactory;
     BatchMintTokenFactory batchMintTokenFactory;
 
     function setUp() public {}
@@ -20,13 +20,10 @@ contract DeployScript is Script {
         entryPoint = new EntryPoint();
         console.log("EntryPoint: %s", address(entryPoint));
 
-        simpleAccountFactoryFactory = new SimpleAccountFactory(
+        simpleAccountFactory = new SimpleAccountFactory(
             IEntryPoint(address(entryPoint))
         );
-        console.log(
-            "SimpleAccountFactory: %s",
-            address(simpleAccountFactoryFactory)
-        );
+        console.log("SimpleAccountFactory: %s", address(simpleAccountFactory));
 
         batchMintTokenFactory = new BatchMintTokenFactory();
         console.log(

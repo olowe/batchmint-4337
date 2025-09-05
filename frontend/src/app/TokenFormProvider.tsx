@@ -85,6 +85,7 @@ export default function TokenFormProvider(props: PropsWithChildren) {
     !!formData.name.trim() &&
     !!formData.symbol.trim() &&
     !!formData.totalSupply.trim() &&
+    Number(formData.totalSupply) > 0 &&
     !isDuplicateToken();
 
   const addToken = async (): Promise<void> => {
@@ -138,7 +139,11 @@ export default function TokenFormProvider(props: PropsWithChildren) {
 
   const formatNumber = (num: string): any => {
     if (!num) return "";
-    return Number.parseInt(num).toLocaleString();
+
+    return Number(num).toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 6,
+    });
   };
 
   return (

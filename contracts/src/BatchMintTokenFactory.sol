@@ -25,13 +25,6 @@ contract BatchMintTokenFactory {
 
     mapping(address => mapping(bytes32 => bool)) public deployedTokens;
 
-    function _createUserTokenKey(
-        string memory name_,
-        string memory symbol_
-    ) private pure returns (bytes32) {
-        return keccak256(abi.encode(name_, symbol_));
-    }
-
     function deployTokens(
         TokenParam[] memory params_
     ) external returns (address[] memory) {
@@ -42,6 +35,41 @@ contract BatchMintTokenFactory {
             string memory newTokenName = params_[i].name;
             string memory newTokenSymbol = params_[i].symbol;
             uint256 newTokenTotalSupply = params_[i].totalSupply;
+
+            // Skip zero supply tokens
+            if (newTokenTotalSupply == 0) {
+                emit TokenSkipped(
+                    msg.sender,
+                    newTokenName,
+                    newTokenSymbol,
+                    "Zero supply"
+                );
+                continue;
+            }
+
+            // Skip tokens with empty name
+            bytes memory newTokenNameString = bytes(newTokenName);
+            if (newTokenNameString.length == 0) {
+                emit TokenSkipped(
+                    msg.sender,
+                    newTokenName,
+                    newTokenSymbol,
+                    "Empty name"
+                );
+                continue;
+            }
+
+            // Skip tokens with empty symbol
+            bytes memory newTokenSymbolString = bytes(newTokenSymbol);
+            if (newTokenSymbolString.length == 0) {
+                emit TokenSkipped(
+                    msg.sender,
+                    newTokenName,
+                    newTokenSymbol,
+                    "Empty symbol"
+                );
+                continue;
+            }
 
             // Create unique token key for user
             bytes32 tokenKey = _createUserTokenKey(
@@ -100,5 +128,12 @@ contract BatchMintTokenFactory {
         );
 
         return deployedTokens[user_][expectedTokenKey];
+    }
+
+    function _createUserTokenKey(
+        string memory name_,
+        string memory symbol_
+    ) private pure returns (bytes32) {
+        return keccak256(abi.encode(name_, symbol_));
     }
 }

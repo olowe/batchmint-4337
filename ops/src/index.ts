@@ -113,6 +113,7 @@ async function main() {
   const params: TokenParam[] = [
     {name: 'FirstToken', symbol: 'FIRST', totalSupply: 100000n},
     {name: 'SecondToken', symbol: 'SECOND', totalSupply: 200000n},
+    {name: 'ThirdToken', symbol: 'THIRD', totalSupply: 0n}, // will be skipped
   ];
 
   const deployCalldata = batchMintTokenFactoryInterface.encodeFunctionData(

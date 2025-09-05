@@ -24,5 +24,6 @@ contract BatchMintTokenTest is Test {
         assertEq(token.symbol(), symbol);
         assertEq(token.totalSupply(), expectedTotalSupply);
         assertEq(token.balanceOf(creator), expectedTotalSupply);
+        assertEq(token.owner(), creator);
     }
 }

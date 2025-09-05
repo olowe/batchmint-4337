@@ -201,6 +201,33 @@ contract BatchMintTokenFactoryTest is Test {
         _assertTokenDeployedForUser(secondUser, tokenName2, tokenSymbol2);
     }
 
+    function test_UserDeploysTokensWithEmptyParams_SkipsAll() public {
+        // Arrange
+        TokenParam memory t1 = TokenParam("", "EMTONE", totalSupply);
+        TokenParam memory t2 = TokenParam("TokenTwo", "", totalSupply);
+        TokenParam memory t3 = TokenParam("TokenThree", "EMTTHREE", 0);
+
+        TokenParam[] memory tokenParams = new TokenParam[](3);
+        tokenParams[0] = t1;
+        tokenParams[1] = t2;
+        tokenParams[2] = t3;
+
+        // Act
+        _expectTokenSkipped(address(this), t1.name, t1.symbol, "Empty name");
+        _expectTokenSkipped(address(this), t2.name, t2.symbol, "Empty symbol");
+        _expectTokenSkipped(address(this), t3.name, t3.symbol, "Zero supply");
+
+        address[] memory deployedTokens = batchMintTokenFactory.deployTokens(
+            tokenParams
+        );
+
+        // Assert
+        assertEq(deployedTokens.length, 3);
+        assertTrue(deployedTokens[0] == address(0));
+        assertTrue(deployedTokens[1] == address(0));
+        assertTrue(deployedTokens[2] == address(0));
+    }
+
     function _expectTransfer(
         address from_,
         address to_,
@@ -258,6 +285,7 @@ contract BatchMintTokenFactoryTest is Test {
         assertEq(token.symbol(), expectedSymbol_);
         assertEq(token.totalSupply(), supply);
         assertEq(token.balanceOf(expectedCreator_), supply);
+        assertEq(token.owner(), expectedCreator_);
     }
 
     function _assertTokenDeployedForUser(
