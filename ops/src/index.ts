@@ -144,7 +144,7 @@ async function main() {
   // Pack gas limits: verificationGasLimit (16 bytes) + callGasLimit (16 bytes)
   const accountGasLimits = ethers.solidityPacked(
     ['uint128', 'uint128'],
-    [300_000n, 1_000_000n], // [verificationGasLimit, callGasLimit]
+    [1_000_000n, 5_000_000n], // [verificationGasLimit, callGasLimit]
   );
 
   // Pack gas fees: maxPriorityFeePerGas (16 bytes) + maxFeePerGas (16 bytes)

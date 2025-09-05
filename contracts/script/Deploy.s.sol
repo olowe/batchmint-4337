@@ -15,7 +15,7 @@ contract DeployScript is Script {
     function setUp() public {}
 
     function run() public returns (BatchMintTokenFactory) {
-        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
+        vm.startBroadcast();
 
         entryPoint = new EntryPoint();
         console.log("EntryPoint: %s", address(entryPoint));
