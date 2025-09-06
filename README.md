@@ -8,9 +8,9 @@ Stack: **Next.js + TypeScript + viem/wagmi**, **Foundry/Anvil**.
 
 ## Live Demo
 
-The dApp is deployed on Vercel: **https://batchmint.vercel.app**
+The dApp is deployed on Vercel: [https://batchmint.vercel.app](https://batchmint.vercel.app)
 
-### Testnet Contracts (Sepolia)
+## Testnet Contracts (Sepolia)
 
 **EntryPoint (v0.8)**: [0x5d4038FC16eaA07Bfc20E09D678301bCd29b2a32](https://sepolia.etherscan.io/address/0x5d4038FC16eaA07Bfc20E09D678301bCd29b2a32)
 
@@ -45,8 +45,8 @@ forge build
 
 # Run deploy script
 # Replace <PK> with the anvil key you copied earlier
-forge script script/Deploy.s.sol:Deploy \
-  --broadcast --rpc-url http://127.0.0.1:8545 --private-key <PK>
+forge script script/Deploy.s.sol \
+  --rpc-url http://127.0.0.1:8545 --private-key <PK> --broadcast
 
 # Copy the resulting addresses (EntryPoint, SimpleAccountFactory, BatchMintTokenFactory)
 ```
@@ -87,7 +87,7 @@ npm run start:app
 
 Low-level, no-UI manual tests (for fast iteration):
 
-#### 5a) Create `ops/.env`
+#### 5a) Create `ops/.env`:
 
 ```
 EOA_PRIVATE_KEY=<grab any anvil PK>
@@ -156,7 +156,7 @@ Next.js + TypeScript (viem/wagmi) with a provider that drives the AA flow end-to
 - **Account init:** On first run, builds `initCode` via `concatHex(factory, encodeFunctionData(createAccount(owner, 0)))`; otherwise uses `"0x"`.
 - **Call data:** Encodes `BatchMintTokenFactory.deployTokens(params[])` and wraps it in `SimpleAccount.execute(target, 0, data)`.
 - **Nonce:** Reads from `EntryPoint.getNonce(sender, 0)`.
-- **Gas & fees:** Delegates to **`GasHandler`**. This keeps all AA gas/prefund logic in one place, so that the strategy is easy to tweak or swap for a bundler later.
+- **Gas & fees:** Delegates to **`frontend/src/utils/GasHandler.ts`**. This keeps all AA gas/prefund logic in one place, so that the strategy is easy to tweak or swap for a bundler later.
 - **UserOp:** Constructs the 9-field `PackedUserOperation` (empty `paymasterAndData`), then EIP-712 signs the struct over the EntryPoint v0.8 domain.
 - **Prefund:** Uses `GasHandler.getRequiredDepositForUserOp(...)` to compute the EntryPoint deposit deficit.
 - **Submit:** `simulateContract(handleOps)` → `walletClient.writeContract(sim.request)` → `waitForTransactionReceipt`.
