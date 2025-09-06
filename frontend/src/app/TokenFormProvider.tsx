@@ -23,7 +23,7 @@ interface ITokenFormContext {
   formData: IFormData;
   tokenPreview: ITokenCardItem[];
   isFormValid: boolean;
-  isDeploying: boolean;
+  isCheckingToken: boolean;
   isDeploymentEnabled: boolean;
   notification: string | null;
   updateFormData: (field: keyof IFormData, value: string) => void;
@@ -38,7 +38,7 @@ const Context = createContext<ITokenFormContext>({
   formData: { name: "", symbol: "", totalSupply: "" },
   tokenPreview: [],
   isFormValid: false,
-  isDeploying: false,
+  isCheckingToken: false,
   isDeploymentEnabled: false,
   notification: null,
   updateFormData: () => {},
@@ -72,7 +72,7 @@ export default function TokenFormProvider(props: PropsWithChildren) {
   });
 
   const [notification, setNotification] = useState<string | null>(null);
-  const [isDeploying, setIsDeploying] = useState(false);
+  const [isCheckingToken, setIsCheckingToken] = useState(false);
   const [tokenPreview, setTokenPreview] = useState<ITokenCardItem[]>([]);
 
   const isDuplicateToken = (): boolean => {
@@ -95,7 +95,10 @@ export default function TokenFormProvider(props: PropsWithChildren) {
 
     setNotification(null);
 
+    setIsCheckingToken(true);
     const isDeployed = await checkIfTokenIsDeployed();
+    setIsCheckingToken(false);
+
     if (isDeployed) {
       setNotification("This token has already been deployed.");
       return;
@@ -157,7 +160,7 @@ export default function TokenFormProvider(props: PropsWithChildren) {
         updateFormData,
         clearForm,
         addToken,
-        isDeploying,
+        isCheckingToken,
         formatNumber,
         removeTokenFromPreview,
         isDuplicateToken,

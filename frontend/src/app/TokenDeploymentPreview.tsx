@@ -2,11 +2,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
+import { useTokenDeployer } from "./TokenDeploymentProvider";
 import { useTokenFormProvider } from "./TokenFormProvider";
 
 export default function TokenDeploymentPreview() {
   const { tokenPreview, removeTokenFromPreview, formatNumber } =
     useTokenFormProvider();
+  const { isDeploying } = useTokenDeployer();
 
   return (
     <Card className="glass">
@@ -38,6 +40,7 @@ export default function TokenDeploymentPreview() {
                     variant="ghost"
                     size="sm"
                     onClick={() => removeTokenFromPreview(token.id)}
+                    disabled={isDeploying}
                     className="text-destructive hover:text-destructive"
                   >
                     <Trash2 className="w-4 h-4" />

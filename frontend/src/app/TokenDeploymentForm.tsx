@@ -42,6 +42,7 @@ export default function TokenDeploymentForm() {
     tokenPreview,
     isFormValid,
     updateFormData,
+    isCheckingToken,
     addToken,
     clearForm,
     isDuplicateToken,
@@ -144,7 +145,9 @@ export default function TokenDeploymentForm() {
             variant="outline"
             onClick={addToken}
             className="w-full glass border-dashed border-2 hover:bg-black/70 hover:border-black/70 bg-transparent"
-            disabled={!isFormValid || tokenPreview.length >= 10}
+            disabled={
+              !isFormValid || isCheckingToken || tokenPreview.length >= 10
+            }
           >
             {isDuplicateToken()
               ? "Token already exists"
