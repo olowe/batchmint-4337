@@ -19,7 +19,7 @@ function Home() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-balance">
-              BatchToken Deployer
+              BatchMintToken Deployer
             </h1>
 
             <WalletButton />
