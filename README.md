@@ -138,7 +138,7 @@ npm run test:contracts
 
 GitHub Actions runs fmt/build/test on contracts
 
-## Dev Chain Resets & “BlockOutOfRange”
+### Dev Chain Resets & “BlockOutOfRange”
 
 If you run a fresh Anvil node and the app (or your browser cache) still has a saved block number from a previous run, you might see errors like:
 
@@ -146,9 +146,9 @@ If you run a fresh Anvil node and the app (or your browser cache) still has a sa
 
 **To fix**: In MetaMask, remove and re-add the Localhost/Anvil network (this cleared it for me).
 
-## Wallet & Network Support
+### Wallet & Network Support
 
-This dApp is wired for **MetaMask** and **Anvil (Localhost)** by default. No WalletConnect/Coinbase adapters included.
+This dApp is wired for **MetaMask** by default. No WalletConnect/Coinbase adapters included.
 
 ## Core Components
 
