@@ -15,7 +15,7 @@ export interface DeployedToken {
 const useDeployedTokens = (smartAccountAddress: Hex) => {
   const { isConnected, chainId } = useAccount();
   const publicClient = usePublicClient();
-  const { isConnectionSupported } = useConnectionStatus();
+  const { isConnectionSupported, isConnectionLocal } = useConnectionStatus();
 
   const batchMintTokenFactory = isConnectionSupported
     ? networkContractsConfig[chainId as number].batchMintTokenFactory
@@ -42,7 +42,12 @@ const useDeployedTokens = (smartAccountAddress: Hex) => {
           "event TokenDeployed(address indexed creator,address indexed token,string name,string symbol)"
         ),
         args: { creator: smartAccountAddress } as any,
-        fromBlock: BigInt(0),
+        fromBlock: isConnectionLocal
+          ? BigInt(0)
+          : BigInt(
+              process.env
+                .NEXT_PUBLIC_TESTNET_BATCH_MINT_TOKEN_FACTORY_DEPLOY_BLOCK as string
+            ),
         toBlock: "latest",
       });
 
