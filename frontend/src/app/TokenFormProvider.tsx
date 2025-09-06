@@ -91,7 +91,9 @@ export default function TokenFormProvider(props: PropsWithChildren) {
     !isDuplicateToken();
 
   const addToken = async (): Promise<void> => {
-    if (!isFormValid) return;
+    if (!isFormValid) {
+      return;
+    }
 
     setNotification(null);
 

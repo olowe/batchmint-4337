@@ -1,21 +1,21 @@
-const localEntryPoint = process.env
-  .NEXT_PUBLIC_LOCAL_ENTRY_POINT as `0x${string}`;
-const localSimpleAccountFactory = process.env
-  .NEXT_PUBLIC_LOCAL_SIMPLE_ACCOUNT_FACTORY as `0x${string}`;
-const localBatchMintTokenFactory = process.env
-  .NEXT_PUBLIC_LOCAL_BATCH_MINT_TOKEN_FACTORY as `0x${string}`;
+import { Hex } from "viem";
 
-const testnetEntryPoint = process.env
-  .NEXT_PUBLIC_TESTNET_ENTRY_POINT as `0x${string}`;
+const localEntryPoint = process.env.NEXT_PUBLIC_LOCAL_ENTRY_POINT as Hex;
+const localSimpleAccountFactory = process.env
+  .NEXT_PUBLIC_LOCAL_SIMPLE_ACCOUNT_FACTORY as Hex;
+const localBatchMintTokenFactory = process.env
+  .NEXT_PUBLIC_LOCAL_BATCH_MINT_TOKEN_FACTORY as Hex;
+
+const testnetEntryPoint = process.env.NEXT_PUBLIC_TESTNET_ENTRY_POINT as Hex;
 const testnetSimpleAccountFactory = process.env
-  .NEXT_PUBLIC_TESTNET_SIMPLE_ACCOUNT_FACTORY as `0x${string}`;
+  .NEXT_PUBLIC_TESTNET_SIMPLE_ACCOUNT_FACTORY as Hex;
 const testnetBatchMintTokenFactory = process.env
-  .NEXT_PUBLIC_TESTNET_BATCH_MINT_TOKEN_FACTORY as `0x${string}`;
+  .NEXT_PUBLIC_TESTNET_BATCH_MINT_TOKEN_FACTORY as Hex;
 
 interface INetworkContractConfig {
-  entryPoint: `0x${string}`;
-  simpleAccountFactory: `0x${string}`;
-  batchMintTokenFactory: `0x${string}`;
+  entryPoint: Hex;
+  simpleAccountFactory: Hex;
+  batchMintTokenFactory: Hex;
 }
 
 interface INetworkContractsConfig {

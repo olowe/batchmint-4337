@@ -11,15 +11,14 @@ import {
 import useDeployedTokens from "@/hooks/useDeployedTokens";
 import useSmartAccount from "@/hooks/useSmartAccount";
 import { useState } from "react";
+import { Hex } from "viem";
 
 export default function TokenDeploymentHistory() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const smartAccountAddress = useSmartAccount();
 
-  const deployedTokens = useDeployedTokens(
-    smartAccountAddress as `0x${string}`
-  );
+  const deployedTokens = useDeployedTokens(smartAccountAddress as Hex);
 
   const totalDeployedCount = deployedTokens.length;
 

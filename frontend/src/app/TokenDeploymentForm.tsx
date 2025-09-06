@@ -21,12 +21,18 @@ const getTxStatusMessage = (stage: TxStage): string => {
       return "Preparing operation...";
     case "signing":
       return "Waiting for signature...";
-    case "simulating":
-      return "Simulating transaction...";
-    case "submitting":
-      return "Submitting to network...";
-    case "mining":
-      return "Mining transaction...";
+    case "simulating-prefund":
+      return "Simulating deposit transaction...";
+    case "submitting-prefund":
+      return "Submitting deposit to network...";
+    case "simulating-handleOps":
+      return "Simulating deployment transaction...";
+    case "submitting-handleOps":
+      return "Submitting deployment to network...";
+    case "mining-prefund":
+      return "Confirming deposit transaction...";
+    case "mining-handleOps":
+      return "Confirming deployment transaction...";
     case "success":
       return "Transaction successful!";
     case "error":

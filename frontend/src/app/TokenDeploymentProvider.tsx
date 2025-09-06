@@ -6,18 +6,34 @@ import simpleAccountFactoryABI from "@/abis/SimpleAccountFactory";
 import { useConnectionStatus } from "@/app/ConnectionStatusProvider";
 import { useTokenFormProvider } from "@/app/TokenFormProvider";
 import useSmartAccount from "@/hooks/useSmartAccount";
+import GasHandler from "@/utils/GasHandler";
 import networkContractsConfig from "@/wallet/network-contracts.config";
 import { createContext, PropsWithChildren, useContext, useState } from "react";
-import { encodeFunctionData, encodePacked, parseEventLogs } from "viem";
+import {
+  concatHex,
+  encodeFunctionData,
+  encodePacked,
+  Hex,
+  parseEventLogs,
+} from "viem";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+
+interface ITokenParam {
+  name: string;
+  symbol: string;
+  totalSupply: bigint;
+}
 
 export type TxStage =
   | "idle"
   | "building"
   | "signing"
-  | "simulating"
-  | "submitting"
-  | "mining"
+  | "simulating-prefund"
+  | "simulating-handleOps"
+  | "submitting-prefund"
+  | "submitting-handleOps"
+  | "mining-prefund"
+  | "mining-handleOps"
   | "success"
   | "error";
 
@@ -104,7 +120,7 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
       address: smartAccountAddress,
     });
     console.log("userSmartAccountContractCode", userSmartAccountContractCode);
-    const shouldDeploySmartAccount = userSmartAccountContractCode === "0x";
+    const shouldDeploySmartAccount = !userSmartAccountContractCode;
     console.log("shouldDeploySmartAccount", shouldDeploySmartAccount);
 
     //  Encode factory calldata for creating a smart account
@@ -119,27 +135,19 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
 
     // Set initCode for first-time Smart Contract Account creation
     const initCode = shouldDeploySmartAccount
-      ? simpleAccountFactory + factoryCalldata.slice(2)
+      ? concatHex([simpleAccountFactory, factoryCalldata])
       : "0x";
     console.log("initCode", initCode);
 
     return initCode;
   };
 
-  const getTokenFactoryCalldata = async () => {
+  const getTokenFactoryCalldata = async (params: ITokenParam[]) => {
     if (!batchMintTokenFactory) {
       return;
     }
-    console.log("batchMintTokenFactory", batchMintTokenFactory);
 
     //  Encode calldata for deploying tokens
-    const params = tokenPreview.map(({ name, symbol, totalSupply }) => ({
-      name,
-      symbol,
-      totalSupply: BigInt(totalSupply),
-    }));
-    console.log("params", params);
-
     const deployCalldata = encodeFunctionData({
       abi: batchMintTokenFactoryABI,
       functionName: "deployTokens",
@@ -158,8 +166,8 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
     return callData;
   };
 
-  const constructUserOperation = async () => {
-    if (!smartAccountAddress || !publicClient || !entryPoint) {
+  const getSmartAccountEntryPointNonce = async () => {
+    if (!publicClient || !entryPoint || !smartAccountAddress) {
       return;
     }
 
@@ -171,52 +179,11 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
     });
     console.log("nonce", nonce);
 
-    const feeData = await publicClient.estimateFeesPerGas();
-    const maxFeePerGas = feeData.maxFeePerGas ?? BigInt(1500000);
-    const maxPriorityFeePerGas =
-      feeData.maxPriorityFeePerGas ?? BigInt(1500000);
-
-    // Pack gas limits: verificationGasLimit (16 bytes) + callGasLimit (16 bytes)
-    const accountGasLimits = encodePacked(
-      ["uint128", "uint128"],
-      [BigInt(1500000), BigInt(1500000)] // [verificationGasLimit, callGasLimit]
-    );
-    console.log("accountGasLimits", accountGasLimits);
-
-    // Pack gas fees: maxPriorityFeePerGas (16 bytes) + maxFeePerGas (16 bytes)
-    const gasFees = encodePacked(
-      ["uint128", "uint128"],
-      [maxPriorityFeePerGas, maxFeePerGas]
-    );
-    console.log("gasFees", gasFees);
-
-    const initCode = await getSmartAccountInitCode();
-    const callData = await getTokenFactoryCalldata();
-    if (!initCode || !callData) {
-      return;
-    }
-
-    // Construct UserOperation
-    const userOp = {
-      sender: smartAccountAddress,
-      nonce,
-      initCode,
-      callData,
-      accountGasLimits,
-      preVerificationGas: BigInt(1500000),
-      gasFees,
-      paymasterAndData: "0x",
-      signature: "0x",
-    };
-
-    return userOp;
+    return nonce;
   };
 
-  const getUserOpHash = async () => {
-    const userOp: any = await constructUserOperation();
-    console.log("userOp", userOp);
-
-    if (!publicClient || !userOp || !entryPoint || !chainId) {
+  const getUserOpHash = async (userOp: any) => {
+    if (!publicClient || !userOp || !entryPoint) {
       return;
     }
 
@@ -228,7 +195,7 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
     });
     console.log("userOpHash", userOpHash);
 
-    return { userOp, userOpHash };
+    return userOpHash;
   };
 
   const signUserOpHash = async (userOp: any) => {
@@ -255,21 +222,120 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
     return signature;
   };
 
+  const updateTxMonitor = (stage: TxStage) => {
+    setTxMonitor({ ...txMonitor, stage });
+  };
+
   const deployTokens = async () => {
     try {
-      setTxMonitor({ ...txMonitor, stage: "building" });
+      updateTxMonitor("building");
 
-      const userOpDetails = await getUserOpHash();
-      if (!userOpDetails) {
-        throw Error("UserOperation not available");
+      if (
+        !publicClient ||
+        !walletClient ||
+        !entryPoint ||
+        !smartAccountAddress ||
+        !batchMintTokenFactory ||
+        !userEOA ||
+        !simpleAccountFactory
+      ) {
+        return;
       }
 
-      const { userOp, userOpHash } = userOpDetails;
-      if (!userOp || !userOpHash) {
-        throw Error("UserOperation details not available");
+      // Get initCode
+      const initCode = await getSmartAccountInitCode();
+      if (!initCode) {
+        throw Error("initCode not available");
       }
 
-      setTxMonitor({ ...txMonitor, stage: "signing" });
+      const isNewSmartAccount = initCode !== "0x";
+
+      // Get callData
+      const params: ITokenParam[] = tokenPreview.map(
+        ({ name, symbol, totalSupply }) => ({
+          name,
+          symbol,
+          totalSupply: BigInt(totalSupply),
+        })
+      );
+      console.log("params", params);
+      const callData = await getTokenFactoryCalldata(params);
+      if (!callData) {
+        throw Error("callData not available");
+      }
+
+      // Get nonce
+      const nonce = await getSmartAccountEntryPointNonce();
+      if (nonce === undefined) {
+        throw Error("nonce not available");
+      }
+
+      // Ges gas and their limits
+      const gasHandler = new GasHandler();
+      const feeData = await publicClient.estimateFeesPerGas();
+      console.log("feeData", feeData);
+
+      const gasAndLimits = await gasHandler.buildGasAndLimits(
+        feeData,
+        tokenPreview.length,
+        isNewSmartAccount
+      );
+      const {
+        verificationGasLimit,
+        maxFeePerGas,
+        maxPriorityFeePerGas,
+        preVerificationGas,
+      } = gasAndLimits;
+      console.log("gasAndLimits", gasAndLimits);
+
+      const estCallGasLimit = await gasHandler.estimateTokenDeploymentGas(
+        publicClient,
+        batchMintTokenFactory,
+        tokenPreview.map(({ name, symbol, totalSupply }) => ({
+          name,
+          symbol,
+          totalSupply: BigInt(totalSupply),
+        })),
+        userEOA
+      );
+      console.log("estCallGasLimit", estCallGasLimit);
+
+      // Pack gas limits: verificationGasLimit (16 bytes) + callGasLimit (16 bytes)
+      const accountGasLimits = encodePacked(
+        ["uint128", "uint128"],
+        [verificationGasLimit, estCallGasLimit] // [verificationGasLimit, callGasLimit]
+      );
+      console.log("accountGasLimits", accountGasLimits);
+
+      // Pack gas fees: maxPriorityFeePerGas (16 bytes) + maxFeePerGas (16 bytes)
+      const gasFees = encodePacked(
+        ["uint128", "uint128"],
+        [maxPriorityFeePerGas, maxFeePerGas]
+      );
+      console.log("gasFees", gasFees);
+
+      // Construct UserOperation
+      const userOp = {
+        sender: smartAccountAddress,
+        nonce,
+        initCode,
+        callData,
+        accountGasLimits,
+        preVerificationGas,
+        gasFees,
+        paymasterAndData: "0x" as Hex,
+        signature: "0x",
+      };
+      console.log("userOp", userOp);
+
+      // Get userOp hash
+      const userOpHash = await getUserOpHash(userOp);
+      if (!userOpHash) {
+        throw Error("UserOperation hash not available");
+      }
+
+      // Sign userOp hash
+      updateTxMonitor("signing");
       const userOpHashSignature = await signUserOpHash(userOp);
       if (!userOpHashSignature) {
         throw Error("UserOperation signature not available");
@@ -278,11 +344,40 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
       const signedOp = { ...userOp, signature: userOpHashSignature };
       console.log("signedOp", signedOp);
 
-      if (!publicClient || !walletClient || !userEOA || !entryPoint) {
-        throw Error("Internal error");
+      const smartAccountDepositRequired =
+        await gasHandler.getRequiredDepositForUserOp(
+          publicClient,
+          entryPoint,
+          smartAccountAddress,
+          verificationGasLimit,
+          preVerificationGas,
+          estCallGasLimit,
+          maxFeePerGas
+        );
+      console.log("smartAccountDepositRequired", smartAccountDepositRequired);
+
+      if (
+        smartAccountDepositRequired !== undefined &&
+        smartAccountDepositRequired > BigInt(0)
+      ) {
+        updateTxMonitor("simulating-prefund");
+        const sim = await publicClient.simulateContract({
+          account: userEOA,
+          abi: entryPointABI,
+          address: entryPoint,
+          functionName: "depositTo",
+          args: [smartAccountAddress],
+          value: smartAccountDepositRequired,
+        });
+
+        updateTxMonitor("submitting-prefund");
+        const hash = await walletClient.writeContract(sim.request);
+
+        updateTxMonitor("mining-prefund");
+        await publicClient.waitForTransactionReceipt({ hash });
       }
 
-      setTxMonitor({ ...txMonitor, stage: "simulating" });
+      updateTxMonitor("simulating-handleOps");
       const sim = await publicClient.simulateContract({
         abi: entryPointABI,
         address: entryPoint,
@@ -290,16 +385,17 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
         args: [[signedOp], userEOA],
       });
 
-      setTxMonitor({ ...txMonitor, stage: "submitting" });
+      // Submit userOp
+      updateTxMonitor("submitting-handleOps");
       const hash = await walletClient.writeContract(sim.request);
 
-      setTxMonitor({ ...txMonitor, stage: "mining" });
+      updateTxMonitor("mining-handleOps");
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       console.log("receipt", receipt);
 
       // Parse receipt logs
       const events = parseEventLogs({
-        abi: batchMintTokenFactoryABI,
+        abi: [...batchMintTokenFactoryABI, ...entryPointABI],
         logs: receipt.logs,
         strict: false,
       });
@@ -324,13 +420,13 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
           id: `Skipped${idx}`,
         }));
 
-      setTxMonitor({ ...txMonitor, stage: "success" });
+      updateTxMonitor("success");
 
       return { status: "ok", deployedTokens, skippedTokens };
     } catch (error: any) {
       console.error("deployTokens error", error);
 
-      setTxMonitor({ ...txMonitor, stage: "error" });
+      updateTxMonitor("error");
 
       const errMessage =
         error.shortMessage || error.message || "Transaction failed";

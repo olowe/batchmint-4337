@@ -1,18 +1,18 @@
-import { useConnectionStatus } from "@/app/ConnectionStatusProvider";
-import { useEffect, useState } from "react";
-import { parseAbiItem } from "viem";
-import { useAccount, usePublicClient, useWatchContractEvent } from "wagmi";
 import batchMintTokenFactoryABI from "@/abis/BatchMintTokenFactory";
+import { useConnectionStatus } from "@/app/ConnectionStatusProvider";
 import networkContractsConfig from "@/wallet/network-contracts.config";
+import { useEffect, useState } from "react";
+import { Hex, parseAbiItem } from "viem";
+import { useAccount, usePublicClient, useWatchContractEvent } from "wagmi";
 
 interface DeployedToken {
   tokenName: string;
   tokenSymbol: string;
-  tokenAddress: `0x${string}`;
+  tokenAddress: Hex;
   dateLogged: Date;
 }
 
-const useDeployedTokens = (smartAccountAddress: `0x${string}`) => {
+const useDeployedTokens = (smartAccountAddress: Hex) => {
   const { isConnected, chainId } = useAccount();
   const publicClient = usePublicClient();
   const { isConnectionSupported } = useConnectionStatus();
@@ -55,7 +55,7 @@ const useDeployedTokens = (smartAccountAddress: `0x${string}`) => {
           return {
             tokenName: eLog.args.name as string,
             tokenSymbol: eLog.args.symbol as string,
-            tokenAddress: eLog.args.token as `0x${string}`,
+            tokenAddress: eLog.args.token as Hex,
             dateLogged: new Date(Number(block.timestamp) * 1000),
           };
         })
@@ -93,7 +93,7 @@ const useDeployedTokens = (smartAccountAddress: `0x${string}`) => {
               return {
                 tokenName: eLog.args.name as string,
                 tokenSymbol: eLog.args.symbol as string,
-                tokenAddress: eLog.args.token as `0x${string}`,
+                tokenAddress: eLog.args.token as Hex,
                 dateLogged: new Date(Number(block.timestamp) * 1000),
               };
             })
