@@ -3,14 +3,25 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useAccount, useConnect, useConnectors } from "wagmi";
+import { formatUnits } from "viem";
+import { useAccount, useBalance, useConnect, useConnectors } from "wagmi";
 import { useConnectionStatus } from "./ConnectionStatusProvider";
 
 export default function WalletButton() {
   const connectors = useConnectors();
   const { connect } = useConnect();
-  const { address: walletAddress, isConnected } = useAccount();
+  const { address: walletAddress, isConnected, chainId } = useAccount();
   const { isConnectionSupported } = useConnectionStatus();
+  const { data: walletBalance } = useBalance({
+    address: walletAddress,
+    chainId,
+  });
+
+  const formattedWalletBalance = walletBalance
+    ? Number(formatUnits(walletBalance.value, walletBalance.decimals)).toFixed(
+        2
+      )
+    : undefined;
 
   const [mounted, setMounted] = useState(false);
 
@@ -46,8 +57,14 @@ export default function WalletButton() {
             {isConnectionSupported ? "Connected" : "Unsupported network"}
           </Badge>
 
-          <div className="glass font-mono text-sm bg-transparent border border-border/50 rounded-md px-3 py-1.5">
+          <div className="glass font-mono text-sm bg-transparent border border-border/50 rounded-md px-3 py-1.5 flex">
             {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+            {walletBalance && <>&nbsp;|&nbsp;</>}
+            {walletBalance && (
+              <div className="text-primary/90">
+                {formattedWalletBalance} {walletBalance.symbol}
+              </div>
+            )}
           </div>
         </div>
       )}

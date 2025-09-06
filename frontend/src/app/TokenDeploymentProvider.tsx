@@ -7,16 +7,41 @@ import { useConnectionStatus } from "@/app/ConnectionStatusProvider";
 import { useTokenFormProvider } from "@/app/TokenFormProvider";
 import useSmartAccount from "@/hooks/useSmartAccount";
 import networkContractsConfig from "@/wallet/network-contracts.config";
-import { createContext, PropsWithChildren, useContext } from "react";
-import { encodeFunctionData, encodePacked } from "viem";
+import { createContext, PropsWithChildren, useContext, useState } from "react";
+import { encodeFunctionData, encodePacked, parseEventLogs } from "viem";
 import { useAccount, usePublicClient, useWalletClient } from "wagmi";
 
+export type TxStage =
+  | "idle"
+  | "building"
+  | "signing"
+  | "simulating"
+  | "submitting"
+  | "mining"
+  | "success"
+  | "error";
+
+interface TxMonitor {
+  stage: TxStage;
+}
+
+type DeploymentResult = {
+  status: string;
+  deployedTokens: any[];
+  skippedTokens: any[];
+  error?: string;
+};
+
 interface ITokenDeployerContext {
-  deployTokens: () => Promise<void>;
+  deployTokens: () => Promise<DeploymentResult | undefined>;
+  txMonitor: TxMonitor;
+  isDeploying: boolean;
 }
 
 const Context = createContext<ITokenDeployerContext>({
-  deployTokens: async () => {},
+  deployTokens: async () => undefined,
+  txMonitor: { stage: "idle" },
+  isDeploying: false,
 });
 
 export const useTokenDeployer = () =>
@@ -30,7 +55,11 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
   const smartAccountAddress = useSmartAccount();
   const { tokenPreview } = useTokenFormProvider();
 
-  console.log("tokenPreview", tokenPreview);
+  const [txMonitor, setTxMonitor] = useState<TxMonitor>({ stage: "idle" });
+  const isDeploying =
+    txMonitor.stage !== "idle" &&
+    txMonitor.stage !== "success" &&
+    txMonitor.stage !== "error";
 
   const entryPoint = isConnectionSupported
     ? networkContractsConfig[chainId as number].entryPoint
@@ -227,48 +256,96 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
   };
 
   const deployTokens = async () => {
-    console.log(tokenPreview);
-    const userOpDetails = await getUserOpHash();
-
-    if (!userOpDetails) {
-      return;
-    }
-
-    const { userOp, userOpHash } = userOpDetails;
-    if (!userOp || !userOpHash) {
-      return;
-    }
-
-    const userOpHashSignature = await signUserOpHash(userOp);
-    if (!userOpHashSignature) {
-      return;
-    }
-
-    const signedOp = { ...userOp, signature: userOpHashSignature };
-    console.log("signedOp", signedOp);
-
-    if (!publicClient || !walletClient || !userEOA || !entryPoint) {
-      return;
-    }
-
     try {
+      setTxMonitor({ ...txMonitor, stage: "building" });
+
+      const userOpDetails = await getUserOpHash();
+      if (!userOpDetails) {
+        throw Error("UserOperation not available");
+      }
+
+      const { userOp, userOpHash } = userOpDetails;
+      if (!userOp || !userOpHash) {
+        throw Error("UserOperation details not available");
+      }
+
+      setTxMonitor({ ...txMonitor, stage: "signing" });
+      const userOpHashSignature = await signUserOpHash(userOp);
+      if (!userOpHashSignature) {
+        throw Error("UserOperation signature not available");
+      }
+
+      const signedOp = { ...userOp, signature: userOpHashSignature };
+      console.log("signedOp", signedOp);
+
+      if (!publicClient || !walletClient || !userEOA || !entryPoint) {
+        throw Error("Internal error");
+      }
+
+      setTxMonitor({ ...txMonitor, stage: "simulating" });
       const sim = await publicClient.simulateContract({
         abi: entryPointABI,
         address: entryPoint,
         functionName: "handleOps",
         args: [[signedOp], userEOA],
       });
+
+      setTxMonitor({ ...txMonitor, stage: "submitting" });
       const hash = await walletClient.writeContract(sim.request);
 
+      setTxMonitor({ ...txMonitor, stage: "mining" });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       console.log("receipt", receipt);
+
+      // Parse receipt logs
+      const events = parseEventLogs({
+        abi: batchMintTokenFactoryABI,
+        logs: receipt.logs,
+        strict: false,
+      });
+      console.log("events", events);
+
+      const deployedTokens = events
+        .filter((evt) => evt.eventName === "TokenDeployed")
+        .map((dEvt, idx) => ({
+          name: dEvt.args.name,
+          symbol: dEvt.args.symbol,
+          tokenAddress: dEvt.args.token,
+          type: "deployed",
+          id: `Deployed${idx}`,
+        }));
+      const skippedTokens = events
+        .filter((evt) => evt.eventName === "TokenSkipped")
+        .map((sEvt, idx) => ({
+          name: sEvt.args.name,
+          symbol: sEvt.args.symbol,
+          reason: sEvt.args.reason,
+          type: "skipped",
+          id: `Skipped${idx}`,
+        }));
+
+      setTxMonitor({ ...txMonitor, stage: "success" });
+
+      return { status: "ok", deployedTokens, skippedTokens };
     } catch (error: any) {
-      console.log(error.message);
+      console.error("deployTokens error", error);
+
+      setTxMonitor({ ...txMonitor, stage: "error" });
+
+      const errMessage =
+        error.shortMessage || error.message || "Transaction failed";
+
+      return {
+        status: "error",
+        error: errMessage,
+        deployedTokens: [],
+        skippedTokens: [],
+      };
     }
   };
 
   return (
-    <Context.Provider value={{ deployTokens }}>
+    <Context.Provider value={{ deployTokens, txMonitor, isDeploying }}>
       {props.children}
     </Context.Provider>
   );
