@@ -7,7 +7,9 @@
   "scripts": {
     "build:contracts": "cd contracts && forge build",
     "test:contracts": "cd contracts && forge test -vvv",
+    "setup:ops": "cd ops && npm install",
     "test:ops": "cd ops && npm run dev",
+    "setup:app": "cd frontend && npm install",
     "start:app": "cd frontend && npm run dev"
   }
 }

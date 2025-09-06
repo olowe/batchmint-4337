@@ -1,26 +1,8 @@
 import batchMintTokenFactoryABI from "@/abis/BatchMintTokenFactory";
 import entryPointABI from "@/abis/EntryPoint";
-import simpleAccountFactoryABI from "@/abis/SimpleAccountFactory";
 import { FeeValuesEIP1559, Hex, parseGwei, PublicClient } from "viem";
 
 class GasHandler {
-  async estimateSmartAccountCreationGas(
-    publicClient: PublicClient,
-    simpleAccountFactory: Hex,
-    owner: Hex,
-    salt: bigint
-  ) {
-    const gas = await publicClient.estimateContractGas({
-      address: simpleAccountFactory,
-      abi: simpleAccountFactoryABI,
-      functionName: "createAccount",
-      args: [owner, salt],
-      account: owner,
-    });
-
-    return (gas * BigInt(13)) / BigInt(10); // +30% cushion
-  }
-
   async estimateTokenDeploymentGas(
     publicClient: PublicClient,
     batchMintTokenFactory: Hex,
