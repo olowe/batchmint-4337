@@ -10,24 +10,12 @@ struct TokenParam {
 }
 
 contract BatchMintTokenFactory {
-    event TokenDeployed(
-        address indexed creator,
-        address indexed token,
-        string name,
-        string symbol
-    );
-    event TokenSkipped(
-        address indexed creator,
-        string name,
-        string symbol,
-        string reason
-    );
+    event TokenDeployed(address indexed creator, address indexed token, string name, string symbol);
+    event TokenSkipped(address indexed creator, string name, string symbol, string reason);
 
     mapping(address => mapping(bytes32 => bool)) public deployedTokens;
 
-    function deployTokens(
-        TokenParam[] memory params_
-    ) external returns (address[] memory) {
+    function deployTokens(TokenParam[] memory params_) external returns (address[] memory) {
         address[] memory newTokens = new address[](params_.length);
 
         for (uint256 i = 0; i < params_.length; i++) {
@@ -38,63 +26,35 @@ contract BatchMintTokenFactory {
 
             // Skip zero supply tokens
             if (newTokenTotalSupply == 0) {
-                emit TokenSkipped(
-                    msg.sender,
-                    newTokenName,
-                    newTokenSymbol,
-                    "Zero supply"
-                );
+                emit TokenSkipped(msg.sender, newTokenName, newTokenSymbol, "Zero supply");
                 continue;
             }
 
             // Skip tokens with empty name
             bytes memory newTokenNameString = bytes(newTokenName);
             if (newTokenNameString.length == 0) {
-                emit TokenSkipped(
-                    msg.sender,
-                    newTokenName,
-                    newTokenSymbol,
-                    "Empty name"
-                );
+                emit TokenSkipped(msg.sender, newTokenName, newTokenSymbol, "Empty name");
                 continue;
             }
 
             // Skip tokens with empty symbol
             bytes memory newTokenSymbolString = bytes(newTokenSymbol);
             if (newTokenSymbolString.length == 0) {
-                emit TokenSkipped(
-                    msg.sender,
-                    newTokenName,
-                    newTokenSymbol,
-                    "Empty symbol"
-                );
+                emit TokenSkipped(msg.sender, newTokenName, newTokenSymbol, "Empty symbol");
                 continue;
             }
 
             // Create unique token key for user
-            bytes32 tokenKey = _createUserTokenKey(
-                newTokenName,
-                newTokenSymbol
-            );
+            bytes32 tokenKey = _createUserTokenKey(newTokenName, newTokenSymbol);
 
             // Skip duplicate tokens
             if (deployedTokens[msg.sender][tokenKey]) {
-                emit TokenSkipped(
-                    msg.sender,
-                    newTokenName,
-                    newTokenSymbol,
-                    "Already deployed"
-                );
+                emit TokenSkipped(msg.sender, newTokenName, newTokenSymbol, "Already deployed");
                 continue;
             }
 
             // Deploy token
-            BatchMintToken token = new BatchMintToken(
-                newTokenName,
-                newTokenSymbol,
-                newTokenTotalSupply,
-                msg.sender
-            );
+            BatchMintToken token = new BatchMintToken(newTokenName, newTokenSymbol, newTokenTotalSupply, msg.sender);
 
             // Get new token address
             address tokenAddress = address(token);
@@ -103,12 +63,7 @@ contract BatchMintTokenFactory {
             deployedTokens[msg.sender][tokenKey] = true;
 
             // Log event
-            emit TokenDeployed(
-                msg.sender,
-                tokenAddress,
-                newTokenName,
-                newTokenSymbol
-            );
+            emit TokenDeployed(msg.sender, tokenAddress, newTokenName, newTokenSymbol);
 
             // Store token address
             newTokens[i] = tokenAddress;
@@ -117,23 +72,17 @@ contract BatchMintTokenFactory {
         return newTokens;
     }
 
-    function getUserToken(
-        address user_,
-        string memory tokenName_,
-        string memory tokenSymbol_
-    ) external view returns (bool) {
-        bytes32 expectedTokenKey = _createUserTokenKey(
-            tokenName_,
-            tokenSymbol_
-        );
+    function getUserToken(address user_, string memory tokenName_, string memory tokenSymbol_)
+        external
+        view
+        returns (bool)
+    {
+        bytes32 expectedTokenKey = _createUserTokenKey(tokenName_, tokenSymbol_);
 
         return deployedTokens[user_][expectedTokenKey];
     }
 
-    function _createUserTokenKey(
-        string memory name_,
-        string memory symbol_
-    ) private pure returns (bytes32) {
+    function _createUserTokenKey(string memory name_, string memory symbol_) private pure returns (bytes32) {
         return keccak256(abi.encode(name_, symbol_));
     }
 }

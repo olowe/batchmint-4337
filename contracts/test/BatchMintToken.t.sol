@@ -11,12 +11,7 @@ contract BatchMintTokenTest is Test {
     address creator = address(0x1);
 
     function test_Deployment() public {
-        BatchMintToken token = new BatchMintToken(
-            name,
-            symbol,
-            totalSupply,
-            creator
-        );
+        BatchMintToken token = new BatchMintToken(name, symbol, totalSupply, creator);
 
         uint256 expectedTotalSupply = totalSupply * (10 ** token.decimals());
 

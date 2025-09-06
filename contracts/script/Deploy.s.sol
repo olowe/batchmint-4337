@@ -20,16 +20,11 @@ contract DeployScript is Script {
         entryPoint = new EntryPoint();
         console.log("EntryPoint: %s", address(entryPoint));
 
-        simpleAccountFactory = new SimpleAccountFactory(
-            IEntryPoint(address(entryPoint))
-        );
+        simpleAccountFactory = new SimpleAccountFactory(IEntryPoint(address(entryPoint)));
         console.log("SimpleAccountFactory: %s", address(simpleAccountFactory));
 
         batchMintTokenFactory = new BatchMintTokenFactory();
-        console.log(
-            "BatchMintTokenFactory: %s",
-            address(batchMintTokenFactory)
-        );
+        console.log("BatchMintTokenFactory: %s", address(batchMintTokenFactory));
 
         vm.stopBroadcast();
 
