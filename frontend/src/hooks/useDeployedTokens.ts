@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Hex, parseAbiItem } from "viem";
 import { useAccount, usePublicClient, useWatchContractEvent } from "wagmi";
 
-interface DeployedToken {
+export interface DeployedToken {
   tokenName: string;
   tokenSymbol: string;
   tokenAddress: Hex;

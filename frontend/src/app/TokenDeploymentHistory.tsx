@@ -12,13 +12,15 @@ import useDeployedTokens from "@/hooks/useDeployedTokens";
 import useSmartAccount from "@/hooks/useSmartAccount";
 import { useState } from "react";
 import { Hex } from "viem";
+import { useConnectionStatus } from "./ConnectionStatusProvider";
+import TokenDetailsLink from "./TokenDetailsLink";
 
 export default function TokenDeploymentHistory() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
   const smartAccountAddress = useSmartAccount();
-
+  const { isConnectionLocal } = useConnectionStatus();
   const deployedTokens = useDeployedTokens(smartAccountAddress as Hex);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const totalDeployedCount = deployedTokens.length;
 
@@ -69,12 +71,18 @@ export default function TokenDeploymentHistory() {
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="font-medium">{token.tokenName}</div>
-                          <div className="text-sm text-muted-foreground">
-                            ${token.tokenSymbol} • Deployed{" "}
-                            {token.dateLogged.toLocaleDateString()}
+                          <div className="text-sm text-muted-foreground flex">
+                            ${token.tokenSymbol} •{" "}
+                            {isConnectionLocal ? (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {token.tokenAddress}
+                              </div>
+                            ) : (
+                              <TokenDetailsLink token={token} />
+                            )}
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            Deployed {token.tokenAddress}
+                            Deployed on {token.dateLogged.toLocaleDateString()}
                           </div>
                         </div>
                       </div>

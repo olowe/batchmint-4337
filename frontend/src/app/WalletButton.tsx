@@ -4,12 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatUnits } from "viem";
-import { useAccount, useBalance, useConnect, useConnectors } from "wagmi";
+import {
+  useAccount,
+  useBalance,
+  useConnect,
+  useConnectors,
+  useDisconnect,
+} from "wagmi";
 import { useConnectionStatus } from "./ConnectionStatusProvider";
 
 export default function WalletButton() {
   const connectors = useConnectors();
   const { connect } = useConnect();
+  const { disconnect } = useDisconnect();
   const { address: walletAddress, isConnected, chainId } = useAccount();
   const { isConnectionSupported } = useConnectionStatus();
   const { data: walletBalance } = useBalance({
@@ -66,6 +73,16 @@ export default function WalletButton() {
               </div>
             )}
           </div>
+
+          <Button
+            variant="link"
+            size="sm"
+            onClick={() => disconnect()}
+            className="text-muted-foreground hover:text-destructive p-0 h-auto"
+            title="Disconnect Wallet"
+          >
+            Disconnect Wallet
+          </Button>
         </div>
       )}
     </div>

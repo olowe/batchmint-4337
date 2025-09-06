@@ -16,6 +16,7 @@ interface INetworkContractConfig {
   entryPoint: Hex;
   simpleAccountFactory: Hex;
   batchMintTokenFactory: Hex;
+  chainExlorerUrl?: string;
 }
 
 interface INetworkContractsConfig {
@@ -32,6 +33,7 @@ const networkContractsConfig: INetworkContractsConfig = {
     entryPoint: testnetEntryPoint,
     simpleAccountFactory: testnetSimpleAccountFactory,
     batchMintTokenFactory: testnetBatchMintTokenFactory,
+    chainExlorerUrl: "https://sepolia.etherscan.io",
   },
 };
 

@@ -197,7 +197,10 @@ export default function TokenDeploymentForm() {
           {isDeploying && (
             <div className="glass rounded-lg p-3 border border-primary/30 bg-primary/5">
               <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                <div className="relative">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                  <div className="absolute inset-0 w-2 h-2 bg-primary rounded-full animate-ping opacity-75"></div>
+                </div>
                 <div className="text-sm font-medium text-primary">
                   {getTxStatusMessage(txMonitor.stage)}
                 </div>

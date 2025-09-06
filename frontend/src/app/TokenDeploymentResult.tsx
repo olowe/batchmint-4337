@@ -2,12 +2,16 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X } from "lucide-react";
+import { useConnectionStatus } from "./ConnectionStatusProvider";
+import TokenDetailsLink from "./TokenDetailsLink";
 
 export default function TokenDeploymentResult(props: {
   deploymentResults: any[];
   onClose: () => void;
 }) {
   const { deploymentResults, onClose } = props;
+
+  const { isConnectionLocal } = useConnectionStatus();
 
   return (
     <Card className="glass border-border/30">
@@ -44,7 +48,21 @@ export default function TokenDeploymentResult(props: {
                 <div>Symbol: {result.symbol}</div>
 
                 {result.type === "deployed" && (
-                  <div>Token: {result.tokenAddress}</div>
+                  <div>
+                    Token:{" "}
+                    {isConnectionLocal ? (
+                      result.tokenAddress
+                    ) : (
+                      <TokenDetailsLink
+                        token={{
+                          tokenName: result.name,
+                          tokenSymbol: result.symbol,
+                          tokenAddress: result.tokenAddress,
+                          dateLogged: new Date(),
+                        }}
+                      />
+                    )}
+                  </div>
                 )}
 
                 {result.type === "skipped" && (
