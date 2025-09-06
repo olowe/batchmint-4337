@@ -89,6 +89,10 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
     ? networkContractsConfig[chainId as number].batchMintTokenFactory
     : undefined;
 
+  const updateTxMonitor = (stage: TxStage) => {
+    setTxMonitor({ ...txMonitor, stage });
+  };
+
   const getEntryPointPackedUserOpFields = () => {
     const types = {
       PackedUserOperation: [
@@ -142,24 +146,34 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
     return initCode;
   };
 
-  const getTokenFactoryCalldata = async (params: ITokenParam[]) => {
+  const getTokenFactoryCalldata = async (paramChunks: ITokenParam[][]) => {
     if (!batchMintTokenFactory) {
       return;
     }
 
-    //  Encode calldata for deploying tokens
-    const deployCalldata = encodeFunctionData({
-      abi: batchMintTokenFactoryABI,
-      functionName: "deployTokens",
-      args: [params],
-    });
-    console.log("deployCalldata", deployCalldata);
+    // Encode calldata for deploying multiple tokens in batches
+    const calls = await Promise.all(
+      paramChunks.map(async (paramChunk) => {
+        const chunkDeployCalldata = encodeFunctionData({
+          abi: batchMintTokenFactoryABI,
+          functionName: "deployTokens",
+          args: [paramChunk],
+        });
 
-    // Encode calldata for actual smart account operation
+        return {
+          target: batchMintTokenFactory,
+          value: BigInt(0),
+          data: chunkDeployCalldata,
+        };
+      })
+    );
+    console.log("calls", calls);
+
+    // Encode calldata for actual smart account batch operation
     const callData = encodeFunctionData({
       abi: simpleAccountABI,
-      functionName: "execute",
-      args: [batchMintTokenFactory, BigInt(0), deployCalldata],
+      functionName: "executeBatch",
+      args: [calls],
     });
     console.log("callData", callData);
 
@@ -222,8 +236,14 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
     return signature;
   };
 
-  const updateTxMonitor = (stage: TxStage) => {
-    setTxMonitor({ ...txMonitor, stage });
+  const chunkParams = (params: ITokenParam[], groupSize: number) => {
+    const chunkedParams: ITokenParam[][] = [];
+
+    for (let i = 0; i < params.length; i += groupSize) {
+      chunkedParams.push(params.slice(i, i + groupSize));
+    }
+
+    return chunkedParams;
   };
 
   const deployTokens = async () => {
@@ -259,7 +279,11 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
         })
       );
       console.log("params", params);
-      const callData = await getTokenFactoryCalldata(params);
+
+      const paramChunks = chunkParams(params, 3);
+      console.log("paramChunks", paramChunks);
+
+      const callData = await getTokenFactoryCalldata(paramChunks);
       if (!callData) {
         throw Error("callData not available");
       }
@@ -288,16 +312,23 @@ export default function TokenDeploymentProvider(props: PropsWithChildren) {
       } = gasAndLimits;
       console.log("gasAndLimits", gasAndLimits);
 
-      const estCallGasLimit = await gasHandler.estimateTokenDeploymentGas(
-        publicClient,
-        batchMintTokenFactory,
-        tokenPreview.map(({ name, symbol, totalSupply }) => ({
-          name,
-          symbol,
-          totalSupply: BigInt(totalSupply),
-        })),
-        userEOA
+      // Estimate callGasLimit for each chunk
+      const paramChunkGasList = await Promise.all(
+        paramChunks.map((paramChunk) =>
+          gasHandler.estimateTokenDeploymentGas(
+            publicClient,
+            batchMintTokenFactory,
+            paramChunk,
+            userEOA
+          )
+        )
       );
+      console.log("paramChunkGasList", paramChunkGasList);
+
+      // Sum up all callGasLimit and add some cushion per chunk
+      const estCallGasLimit =
+        paramChunkGasList.reduce((a, g) => a + g, BigInt(0)) +
+        BigInt(paramChunks.length) * BigInt(21_000);
       console.log("estCallGasLimit", estCallGasLimit);
 
       // Pack gas limits: verificationGasLimit (16 bytes) + callGasLimit (16 bytes)

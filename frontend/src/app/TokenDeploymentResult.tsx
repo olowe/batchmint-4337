@@ -17,7 +17,9 @@ export default function TokenDeploymentResult(props: {
     <Card className="glass border-border/30">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Deployment Results</CardTitle>
+          <CardTitle className="text-lg">
+            Deployment Results ({deploymentResults.length})
+          </CardTitle>
           <Button
             variant="ghost"
             size="sm"

@@ -154,7 +154,7 @@ GitHub Actions runs fmt/build/test on contracts
 Next.js + TypeScript (viem/wagmi) with a provider that drives the AA flow end-to-end.
 
 - **Account init:** On first run, builds `initCode` via `concatHex(factory, encodeFunctionData(createAccount(owner, 0)))`; otherwise uses `"0x"`.
-- **Call data:** Encodes `BatchMintTokenFactory.deployTokens(params[])` and wraps it in `SimpleAccount.execute(target, 0, data)`.
+- **Call data:** Encodes `BatchMintTokenFactory.deployTokens(params[])` and wraps it in `SimpleAccount.executeBatch(calls)`.
 - **Nonce:** Reads from `EntryPoint.getNonce(sender, 0)`.
 - **Gas & fees:** Delegates to **`frontend/src/utils/GasHandler.ts`**. This keeps all AA gas/prefund logic in one place, so that the strategy is easy to tweak or swap for a bundler later.
 - **UserOp:** Constructs the 9-field `PackedUserOperation` (empty `paymasterAndData`), then EIP-712 signs the struct over the EntryPoint v0.8 domain.
